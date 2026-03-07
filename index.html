@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>48h Visa Tracker</title>
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1c1a24">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VisaTracker">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --glass: rgba(255,255,255,0.08);
+  --glass-strong: rgba(255,255,255,0.14);
+  --glass-border: rgba(255,255,255,0.14);
+  --glass-border-subtle: rgba(255,255,255,0.08);
+  --text: #f0ede8;
+  --text-secondary: rgba(240,237,232,0.7);
+  --text-muted: rgba(240,237,232,0.4);
+  --bisou: #d4447a;
+  --bisou-bg: rgba(212,68,122,0.18);
+  --cliftons: #3a9a5c;
+  --cliftons-bg: rgba(58,154,92,0.18);
+  --safe: #3a9a5c;
+  --warn: #c97a10;
+  --danger: #c42a2a;
+  --accent: #c8f060;
+  --radius: 28px;
+  --radius-sm: 18px;
+  --radius-xs: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(60,55,80,0.8) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 60%, rgba(40,50,70,0.6) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 90%, rgba(50,45,65,0.7) 0%, transparent 50%),
+    #1c1a24;
+  background-attachment: fixed;
+  padding: 20px 12px 60px;
+}
+
+/* Animated background shimmer */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 70%);
+  animation: shimmer 8s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes shimmer {
+  0%   { transform: scale(1) translate(0,0); }
+  100% { transform: scale(1.1) translate(2%, 2%); }
+}
+
+.app-wrapper {
+  width: 100%;
+  max-width: 440px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(40px) saturate(1.8);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 32px 80px rgba(0,0,0,0.4),
+    0 0 0 0.5px rgba(255,255,255,0.1) inset,
+    0 1px 0 rgba(255,255,255,0.3) inset;
+}
+
+/* HEADER */
+.header {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: var(--text);
+  padding: 28px 24px 20px;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%);
+  pointer-events: none;
+}
+
+.header::after {
+  content: '48';
+  position: absolute;
+  right: -10px; top: -20px;
+  font-weight: 800;
+  font-size: 9rem;
+  color: rgba(255,255,255,0.05);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.header h1 {
+  font-weight: 800;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: #fff;
+  text-shadow: 0 1px 12px rgba(0,0,0,0.2);
+}
+
+.header h1 span { color: var(--accent); }
+
+.visa-badge {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.85);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  text-transform: uppercase;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  font-weight: 600;
+}
+
+.header-sub {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.5);
+  margin-top: 2px;
+  position: relative;
+}
+
+/* PERIOD NAV */
+.period-nav {
+  background: rgba(0,0,0,0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.period-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  padding: 12px 18px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: color 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.period-btn:hover { color: var(--accent); }
+
+.period-label {
+  flex: 1;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.8);
+  text-transform: uppercase;
+}
+
+.semester-tag {
+  font-size: 0.54rem;
+  padding: 3px 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-right: 12px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+.tag-break { background: rgba(58,154,92,0.2); color: #6abf88; border: 1px solid rgba(58,154,92,0.3); }
+.tag-sem   { background: rgba(196,42,42,0.2); color: #e07070; border: 1px solid rgba(196,42,42,0.3); }
+
+/* MAIN GAUGE */
+.gauge-wrap {
+  padding: 24px 20px 20px;
+  background: rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.gauge-numbers {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.gauge-total {
+  font-weight: 800;
+  font-size: 3.5rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #fff;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+
+.gauge-limit {
+  font-size: 1rem;
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+.gauge-status {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+/* SEGMENTED BAR */
+.seg-bar {
+  height: 10px;
+  background: rgba(255,255,255,0.12);
+  border-radius: var(--radius-xs);
+  display: flex;
+  overflow: hidden;
+  margin-bottom: 8px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.seg-bisou    { background: var(--bisou); height: 100%; transition: width 0.5s ease; min-width: 0; }
+.seg-cliftons { background: var(--cliftons); height: 100%; transition: width 0.5s ease; min-width: 0; }
+.seg-over     { background: var(--danger); height: 100%; transition: width 0.5s ease; min-width: 0; }
+
+.seg-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.62rem;
+  color: var(--text-muted);
+}
+
+/* EMPLOYER PILLS */
+.employer-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 14px 16px;
+  background: rgba(0,0,0,0.08);
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.emp-pill {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.emp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.emp-info { flex: 1; }
+.emp-name { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.emp-hrs  { font-size: 1.1rem; font-weight: 600; margin-top: 1px; color: #fff; }
+
+/* REMAINING BOX */
+.remaining-box {
+  margin: 12px 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255,255,255,0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+.rem-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+.rem-value { font-size: 1.4rem; font-weight: 700; color: #fff; }
+
+/* SECTION HEADERS */
+.section-head {
+  padding: 16px 20px 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ADD FORM */
+.add-form {
+  margin: 0 16px 14px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.fg label {
+  display: block;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.fg input, .fg select {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  padding: 9px 11px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  appearance: none;
+  border-radius: var(--radius-xs);
+  backdrop-filter: blur(6px);
+}
+.fg input::placeholder { color: rgba(255,255,255,0.3); }
+.fg input:focus, .fg select:focus {
+  border-color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.16);
+}
+.fg select option { background: #2d1f6e; color: #fff; }
+
+.form-bottom {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.emp-select-row { display: flex; gap: 6px; flex: 1; }
+.emp-radio { display: none; }
+
+.emp-label {
+  flex: 1;
+  padding: 8px 10px;
+  text-align: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  transition: all 0.2s;
+  text-transform: uppercase;
+  border-radius: var(--radius-xs);
+}
+
+.btn-add {
+  background: rgba(255,255,255,0.9);
+  color: #1a1040;
+  border: none;
+  padding: 9px 20px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  white-space: nowrap;
+  border-radius: var(--radius-xs);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+.btn-add:hover { background: #fff; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+
+.form-err {
+  font-size: 0.66rem;
+  color: #e07070;
+  margin-top: 8px;
+  display: none;
+  font-weight: 500;
+}
+
+/* SHIFT LIST */
+.shift-list {
+  margin: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shift-item {
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.16);
+  display: grid;
+  grid-template-columns: 4px 1fr auto;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.15);
+  transition: background 0.2s;
+}
+.shift-item:hover { background: rgba(255,255,255,0.13); }
+
+.shift-stripe { width: 4px; border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.shift-stripe.bisou    { background: var(--bisou); }
+.shift-stripe.cliftons { background: var(--cliftons); }
+
+.shift-body {
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.shift-date-lbl {
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  min-width: 72px;
+}
+
+.shift-time-lbl {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.9);
+  flex: 1;
+}
+
+.shift-emp-tag {
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.shift-emp-tag.bisou    { background: rgba(212,68,122,0.2); color: #e87aaa; border: 1px solid rgba(212,68,122,0.3); }
+.shift-emp-tag.cliftons { background: rgba(58,154,92,0.18); color: #6abf88; border: 1px solid rgba(58,154,92,0.3); }
+
+.shift-dur-lbl {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  min-width: 52px;
+  text-align: right;
+}
+
+.shift-del {
+  background: none;
+  border: none;
+  border-left: 1px solid rgba(255,255,255,0.1);
+  padding: 0 12px;
+  cursor: pointer;
+  color: rgba(255,255,255,0.2);
+  font-size: 0.8rem;
+  transition: all 0.2s;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+.shift-del:hover { background: rgba(255,75,75,0.2); color: #ff9898; border-left-color: rgba(255,75,75,0.3); }
+
+.empty-state {
+  padding: 24px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.06);
+  border: 1px dashed rgba(255,255,255,0.2);
+  border-radius: var(--radius-sm);
+}
+
+/* OVER WARNING */
+.over-warning {
+  margin: 0 16px 14px;
+  background: rgba(196,42,42,0.15);
+  border: 1px solid rgba(196,42,42,0.35);
+  padding: 12px 14px;
+  font-size: 0.72rem;
+  color: #e07070;
+  line-height: 1.6;
+  display: none;
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(10px);
+  font-weight: 500;
+}
+.over-warning b { font-weight: 700; color: #eeaaaa; }
+
+/* FOOTER STATS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  background: transparent;
+  margin: 12px 16px 0;
+}
+
+.stat-cell {
+  background: rgba(255,255,255,0.09);
+  padding: 12px 8px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.stat-val {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 2px;
+  color: #fff;
+}
+
+.stat-lbl {
+  font-size: 0.56rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* SEMESTER NOTICE */
+.sem-notice {
+  margin: 12px 16px 20px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.14);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 1.8;
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(8px);
+}
+.sem-notice b { color: rgba(255,255,255,0.8); font-weight: 600; }
+
+@media (max-width: 400px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app-wrapper">
+
+<div class="header">
+  <div class="header-top">
+    <h1>48h Visa<br><span>Tracker</span></h1>
+    <span class="visa-badge">Student 500 · QUT</span>
+  </div>
+  <div class="header-sub">🥖 Oui Oui + 💻 Eventify · Fortnight resets every Monday</div>
+  <button id="install-btn" onclick="installApp()" style="display:none;margin-top:14px;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.25);padding:8px 16px;font-family:'Inter',sans-serif;font-size:0.7rem;font-weight:600;cursor:pointer;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:0.06em;border-radius:20px;backdrop-filter:blur(10px);">
+    ⬇ Install App
+  </button>
+</div>
+
+<div class="period-nav">
+  <button class="period-btn" onclick="prevPeriod()">←</button>
+  <span class="period-label" id="period-label"></span>
+  <span class="semester-tag" id="sem-tag"></span>
+  <button class="period-btn" onclick="nextPeriod()">→</button>
+</div>
+
+<!-- GAUGE -->
+<div class="gauge-wrap">
+  <div class="gauge-numbers">
+    <span class="gauge-total" id="gauge-total">0h</span>
+    <span class="gauge-limit">/ 48h</span>
+  </div>
+  <div class="gauge-status" id="gauge-status"></div>
+  <div class="seg-bar">
+    <div class="seg-bisou"    id="seg-bisou"    style="width:0%"></div>
+    <div class="seg-cliftons" id="seg-cliftons" style="width:0%"></div>
+    <div class="seg-over"     id="seg-over"     style="width:0%"></div>
+  </div>
+  <div class="seg-labels">
+    <span style="color:var(--bisou)">🥖 Oui Oui <span id="lbl-bisou">0h</span></span>
+    <span style="color:var(--cliftons)">💻 Eventify <span id="lbl-cliftons">0h</span></span>
+    <span id="lbl-remaining">48h remaining</span>
+  </div>
+</div>
+
+<!-- EMPLOYER PILLS -->
+<div class="employer-row">
+  <div class="emp-pill">
+    <div class="emp-dot" style="background:var(--bisou)"></div>
+    <div class="emp-info">
+      <div class="emp-name" style="color:var(--bisou)">🥖 Oui Oui</div>
+      <div class="emp-hrs" id="pill-bisou">0h</div>
+    </div>
+  </div>
+  <div class="emp-pill">
+    <div class="emp-dot" style="background:var(--cliftons)"></div>
+    <div class="emp-info">
+      <div class="emp-name" style="color:var(--cliftons)">💻 Eventify</div>
+      <div class="emp-hrs" id="pill-cliftons">0h</div>
+    </div>
+  </div>
+</div>
+
+<!-- REMAINING -->
+<div id="remaining-box" class="remaining-box">
+  <div>
+    <div class="rem-label">Hours Remaining</div>
+    <div class="rem-value" id="rem-value">48h 0m</div>
+  </div>
+  <div style="text-align:right">
+    <div class="rem-label">Fortnight resets</div>
+    <div style="font-size:0.78rem;font-weight:500;margin-top:2px" id="reset-date"></div>
+  </div>
+</div>
+
+<!-- OVER WARNING -->
+<div class="over-warning" id="over-warning"></div>
+
+<!-- STATS -->
+<div class="stats-grid">
+  <div class="stat-cell">
+    <div class="stat-val" id="stat-shifts">0</div>
+    <div class="stat-lbl">Shifts</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-val" id="stat-days">—</div>
+    <div class="stat-lbl">Days Left</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-val" id="stat-safe">—</div>
+    <div class="stat-lbl">Safe / Day</div>
+  </div>
+</div>
+
+<!-- ADD SHIFT -->
+<div class="section-head">
+  Log a Shift
+</div>
+
+<div class="add-form">
+  <div class="form-grid">
+    <div class="fg">
+      <label>Date</label>
+      <input type="date" id="inp-date">
+    </div>
+    <div class="fg">
+      <label>Employer</label>
+      <select id="inp-employer">
+        <option value="bisou">🥖 Oui Oui</option>
+        <option value="cliftons">💻 Eventify</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>Start Time</label>
+      <input type="time" id="inp-start">
+    </div>
+    <div class="fg">
+      <label>End Time</label>
+      <input type="time" id="inp-end">
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn-add" onclick="addShift()">+ Add Shift</button>
+    <span style="font-size:0.68rem;color:rgba(255,255,255,0.45)" id="dur-preview"></span>
+  </div>
+  <div class="form-err" id="form-err"></div>
+</div>
+
+<!-- SHIFT LIST -->
+<div class="section-head">
+  Shifts This Period
+  <span style="font-size:0.62rem;font-weight:400;color:rgba(255,255,255,0.45)" id="sort-label"></span>
+</div>
+
+<div class="shift-list" id="shift-list"></div>
+
+<!-- SEMESTER NOTICE -->
+<div class="sem-notice">
+  <b>QUT Semester 1:</b> 23 Feb – 20 Jun 2026 · 48h limit applies<br>
+  <b>Summer/Mid-year break:</b> Unlimited hours<br>
+  <b>Fortnight cycle:</b> Anchored to Mon 9 Feb · resets every 14 days<br>
+  <b>🥖 Oui Oui</b> (formerly Bisou) &nbsp;·&nbsp; <b>💻 Eventify</b> (formerly Cliftons)
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────
+const ANCHOR    = new Date('2026-02-09T00:00:00');
+const SEM_START = new Date('2026-02-23T00:00:00');
+const SEM_END   = new Date('2026-06-20T23:59:59');
+const LIMIT     = 48;
+
+// ── INITIAL DATA (all confirmed shifts) ──────────────────────────────────
+const SEED = [
+  // ── BISOU (9–22 Feb — summer break, shown for history) ──
+  { date:'2026-02-20', start:'06:24', end:'14:57', employer:'bisou' },
+  { date:'2026-02-22', start:'06:27', end:'11:33', employer:'bisou' },
+  // ── BISOU (23 Feb – 8 Mar — semester, 48h applies) ──
+  { date:'2026-02-24', start:'06:30', end:'09:30', employer:'bisou' },
+  { date:'2026-02-27', start:'06:24', end:'11:27', employer:'bisou' },
+  { date:'2026-02-28', start:'06:30', end:'14:24', employer:'bisou' },
+  { date:'2026-03-01', start:'06:30', end:'12:24', employer:'bisou' },
+  { date:'2026-03-03', start:'06:24', end:'10:27', employer:'bisou' },
+  { date:'2026-03-07', start:'07:33', end:'15:06', employer:'bisou' },
+  { date:'2026-03-08', start:'07:30', end:'11:30', employer:'bisou' },
+  // ── CLIFTONS (23 Feb – 8 Mar) ──
+  { date:'2026-02-27', start:'00:00', end:'04:42', employer:'cliftons' },
+  { date:'2026-03-02', start:'00:00', end:'04:55', employer:'cliftons' },
+  // ── 9 Mar – 22 Mar (new fortnight) ──
+  // Cliftons (accepted)
+  { date:'2026-03-09', start:'16:30', end:'19:30', employer:'cliftons' },
+  { date:'2026-03-13', start:'16:00', end:'20:00', employer:'cliftons' },
+  // Bisou (accepted)
+  { date:'2026-03-10', start:'06:30', end:'11:00', employer:'bisou' },
+  { date:'2026-03-15', start:'06:30', end:'14:00', employer:'bisou' },
+];
+
+// Note: Cliftons Feb 27 and Mar 2 have no exact times on payslip — stored as duration blocks from midnight
+// User can edit these once they know exact times
+
+let shifts = (() => {
+  try {
+    const stored = localStorage.getItem('tracker_v4');
+    if (stored) return JSON.parse(stored);
+  } catch(e) {}
+  return SEED.map(s => ({ ...s, id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36) }));
+})();
+
+let offset = 0; // which fortnight we're viewing
+
+function save() {
+  try { localStorage.setItem('tracker_v4', JSON.stringify(shifts)); } catch(e) {}
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function periodStart(off) {
+  const d = new Date(ANCHOR);
+  d.setDate(d.getDate() + off * 14);
+  return d;
+}
+function periodEnd(off) {
+  const d = periodStart(off);
+  d.setDate(d.getDate() + 13);
+  d.setHours(23,59,59,999);
+  return d;
+}
+function inPeriod(dateStr, off) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d >= periodStart(off) && d <= periodEnd(off);
+}
+function isSemester(off) {
+  const ps = periodStart(off);
+  const pe = periodEnd(off);
+  // overlaps with semester
+  return ps <= SEM_END && pe >= SEM_START;
+}
+function isFullyBreak(off) {
+  const pe = periodEnd(off);
+  return pe < SEM_START;
+}
+
+function dur(start, end) {
+  // handle overnight or duration-from-midnight entries
+  const [sh,sm] = start.split(':').map(Number);
+  const [eh,em] = end.split(':').map(Number);
+  let mins = (eh*60+em) - (sh*60+sm);
+  if (mins < 0) mins += 24*60; // overnight
+  return mins / 60;
+}
+
+function fmt(h) {
+  if (h < 0) h = 0;
+  const hrs  = Math.floor(h);
+  const mins = Math.round((h - hrs) * 60);
+  if (hrs === 0) return `${mins}m`;
+  return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-AU', { day:'2-digit', month:'short' });
+}
+
+function dayLabel(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-AU', { weekday:'short', day:'2-digit', month:'short' });
+}
+
+// ── LIVE DURATION PREVIEW ─────────────────────────────────────────────────
+document.getElementById('inp-start').addEventListener('input', updatePreview);
+document.getElementById('inp-end').addEventListener('input', updatePreview);
+function updatePreview() {
+  const s = document.getElementById('inp-start').value;
+  const e = document.getElementById('inp-end').value;
+  const prev = document.getElementById('dur-preview');
+  if (s && e) {
+    const h = dur(s, e);
+    if (h > 0) {
+      prev.textContent = `= ${fmt(h)}`;
+      prev.style.color = 'var(--text)';
+    } else {
+      prev.textContent = 'check times';
+      prev.style.color = '#e07070';
+    }
+  } else {
+    prev.textContent = '';
+  }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function render() {
+  const off = offset;
+  const ps  = periodStart(off);
+  const pe  = periodEnd(off);
+  const sem = isSemester(off);
+  const brk = isFullyBreak(off);
+  const lim = (sem && !brk) ? LIMIT : Infinity;
+
+  // Period label
+  document.getElementById('period-label').textContent =
+    `${fmtDate(ps)}  –  ${fmtDate(pe)}`;
+
+  const semTag = document.getElementById('sem-tag');
+  if (brk) {
+    semTag.textContent = 'Break · Unlimited';
+    semTag.className = 'semester-tag tag-break';
+  } else if (sem) {
+    semTag.textContent = 'Semester · 48h Limit';
+    semTag.className = 'semester-tag tag-sem';
+  } else {
+    semTag.textContent = 'Break · Unlimited';
+    semTag.className = 'semester-tag tag-break';
+  }
+
+  const ps_shifted = shifts.filter(s => inPeriod(s.date, off));
+  const bisouShifts    = ps_shifted.filter(s => s.employer === 'bisou');
+  const cliftonShifts  = ps_shifted.filter(s => s.employer === 'cliftons');
+
+  const bisouH   = bisouShifts.reduce((a,s)   => a + dur(s.start, s.end), 0);
+  const cliftonH = cliftonShifts.reduce((a,s) => a + dur(s.start, s.end), 0);
+  const totalH   = bisouH + cliftonH;
+  const remaining = Math.max(0, LIMIT - totalH);
+  const overBy    = Math.max(0, totalH - LIMIT);
+  const pct       = lim === Infinity ? Math.min(100, (totalH / 80) * 100) : Math.min(100, (totalH / LIMIT) * 100);
+
+  // Gauge
+  const gaugeEl = document.getElementById('gauge-total');
+  gaugeEl.textContent = fmt(totalH);
+  gaugeEl.style.color = sem && totalH > LIMIT ? 'var(--danger)' : sem && totalH > 40 ? 'var(--warn)' : 'var(--text)';
+
+  const statusEl = document.getElementById('gauge-status');
+  if (!sem || brk) {
+    statusEl.textContent = '✓ Break period — no limit applies';
+    statusEl.style.color = 'var(--safe)';
+  } else if (totalH >= LIMIT) {
+    statusEl.textContent = `⚠ Over limit by ${fmt(overBy)}`;
+    statusEl.style.color = 'var(--danger)';
+  } else if (totalH >= 40) {
+    statusEl.textContent = `⚡ ${fmt(remaining)} remaining — approaching limit`;
+    statusEl.style.color = 'var(--warn)';
+  } else if (totalH > 0) {
+    statusEl.textContent = `✓ ${fmt(remaining)} remaining`;
+    statusEl.style.color = 'var(--safe)';
+  } else {
+    statusEl.textContent = 'No shifts logged yet';
+    statusEl.style.color = 'var(--muted)';
+  }
+
+  // Segmented bar
+  const bisouPct   = Math.min(100, (bisouH / LIMIT) * 100);
+  const cliftonPct = Math.min(100, (cliftonH / LIMIT) * 100);
+  const combined   = bisouPct + cliftonPct;
+  const overPct    = Math.max(0, combined - 100);
+  document.getElementById('seg-bisou').style.width    = Math.min(bisouPct, 100) + '%';
+  document.getElementById('seg-cliftons').style.width = Math.min(Math.max(0, combined - overPct - bisouPct + cliftonPct - overPct), 100 - Math.min(bisouPct,100)) + '%';
+  document.getElementById('seg-over').style.width     = overPct + '%';
+  document.getElementById('lbl-bisou').textContent    = fmt(bisouH);
+  document.getElementById('lbl-cliftons').textContent = fmt(cliftonH);
+  document.getElementById('lbl-remaining').textContent = sem && !brk
+    ? (totalH > LIMIT ? `${fmt(overBy)} over!` : `${fmt(remaining)} left`)
+    : 'Unlimited';
+  document.getElementById('lbl-remaining').style.color = totalH > LIMIT ? 'var(--danger)' : 'var(--muted)';
+
+  // Pills
+  document.getElementById('pill-bisou').textContent    = fmt(bisouH);
+  document.getElementById('pill-cliftons').textContent = fmt(cliftonH);
+
+  // Remaining box
+  const remVal = document.getElementById('rem-value');
+  if (!sem || brk) {
+    remVal.textContent = '∞ Unlimited';
+    remVal.style.color = 'var(--safe)';
+  } else if (totalH > LIMIT) {
+    remVal.textContent = `−${fmt(overBy)} over`;
+    remVal.style.color = 'var(--danger)';
+  } else {
+    remVal.textContent = fmt(remaining);
+    remVal.style.color = remaining < 8 ? 'var(--warn)' : 'var(--text)';
+  }
+
+  // Reset date
+  const nextReset = periodStart(off + 1);
+  document.getElementById('reset-date').textContent = fmtDate(nextReset);
+
+  // Over warning
+  const warn = document.getElementById('over-warning');
+  if (sem && !brk && totalH > LIMIT) {
+    warn.style.display = 'block';
+    warn.innerHTML = `⚠ <b>You've worked ${fmt(totalH)} this fortnight</b> — ${fmt(overBy)} over your 48h visa limit. Review your shifts urgently.`;
+  } else {
+    warn.style.display = 'none';
+  }
+
+  // Stats
+  const today = new Date(); today.setHours(0,0,0,0);
+  const peDay = new Date(pe); peDay.setHours(0,0,0,0);
+  const daysLeft = Math.max(0, Math.ceil((peDay - today) / 86400000) + 1);
+  document.getElementById('stat-shifts').textContent = ps_shifted.length;
+  document.getElementById('stat-days').textContent   = daysLeft + 'd';
+  document.getElementById('stat-safe').textContent   = (sem && !brk && daysLeft > 0 && remaining > 0)
+    ? fmt(remaining / daysLeft) : '—';
+
+  // Shift list
+  const listEl = document.getElementById('shift-list');
+  if (ps_shifted.length === 0) {
+    listEl.innerHTML = '<div class="empty-state">No shifts logged for this period.<br>Add your first shift above.</div>';
+  } else {
+    const sorted = [...ps_shifted].sort((a,b) => {
+      if (a.date !== b.date) return b.date.localeCompare(a.date);
+      return b.start.localeCompare(a.start);
+    });
+    listEl.innerHTML = sorted.map(s => {
+      const h = dur(s.start, s.end);
+      const isMidnight = s.start === '00:00';
+      const timeDisplay = isMidnight
+        ? `<span style="color:rgba(255,255,255,0.4);font-style:italic">duration only · ${fmt(h)}</span>`
+        : `${s.start} – ${s.end}`;
+      return `<div class="shift-item">
+        <div class="shift-stripe ${s.employer}"></div>
+        <div class="shift-body">
+          <span class="shift-date-lbl">${dayLabel(s.date)}</span>
+          <span class="shift-time-lbl">${timeDisplay}</span>
+          <span class="shift-emp-tag ${s.employer}">${s.employer === 'bisou' ? '🥖 Oui Oui' : '💻 Eventify'}</span>
+          <span class="shift-dur-lbl">${fmt(h)}</span>
+        </div>
+        <button class="shift-del" onclick="delShift('${s.id}')">✕</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────
+function prevPeriod() { offset--; render(); }
+function nextPeriod() { offset++; render(); }
+
+function delShift(id) {
+  shifts = shifts.filter(s => s.id !== id);
+  save(); render();
+}
+
+function addShift() {
+  const date     = document.getElementById('inp-date').value;
+  const start    = document.getElementById('inp-start').value;
+  const end      = document.getElementById('inp-end').value;
+  const employer = document.getElementById('inp-employer').value;
+  const errEl    = document.getElementById('form-err');
+
+  if (!date || !start || !end) { showErr('Please fill in all fields.'); return; }
+  const h = dur(start, end);
+  if (h <= 0) { showErr('End time must be after start time.'); return; }
+  if (!inPeriod(date, offset)) { showErr('Date is outside this fortnight. Navigate to the correct period first.'); return; }
+
+  // Warn if over limit in semester
+  const sem = isSemester(offset);
+  const brk = isFullyBreak(offset);
+  if (sem && !brk) {
+    const current = shifts.filter(s => inPeriod(s.date, offset)).reduce((a,s) => a + dur(s.start,s.end), 0);
+    if (current + h > LIMIT) {
+      showErr(`⚠ This shift puts you at ${fmt(current + h)} — ${fmt(current + h - LIMIT)} over your 48h limit!`);
+    } else {
+      errEl.style.display = 'none';
+    }
+  } else {
+    errEl.style.display = 'none';
+  }
+
+  const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+  shifts.push({ date, start, end, employer, id });
+  save(); render();
+
+  document.getElementById('inp-date').value  = '';
+  document.getElementById('inp-start').value = '';
+  document.getElementById('inp-end').value   = '';
+  document.getElementById('dur-preview').textContent = '';
+}
+
+function showErr(msg) {
+  const el = document.getElementById('form-err');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+// Find current fortnight
+(function() {
+  const today = new Date();
+  for (let i = -4; i <= 4; i++) {
+    if (today >= periodStart(i) && today <= periodEnd(i)) {
+      offset = i; return;
+    }
+  }
+  offset = 0;
+})();
+
+// Set today's date as default in the form
+document.getElementById('inp-date').value = new Date().toISOString().split('T')[0];
+
+render();
+</script>
+
+<script>
+// ── SERVICE WORKER ─────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(r => console.log('SW registered:', r.scope))
+      .catch(e => console.warn('SW failed:', e));
+  });
+}
+
+// ── INSTALL PROMPT ─────────────────────────────────────────────────────────
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'flex';
+});
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt = null;
+    const btn = document.getElementById('install-btn');
+    if (btn) btn.style.display = 'none';
+  });
+}
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'none';
+});
+</script>
+</div>
+</body>
+</html>
